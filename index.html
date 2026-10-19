@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b5bdb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Özel Ders">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Özel Ders Hocam</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, Segoe UI, sans-serif; background: #f3f4f8; color: #1f2430; height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+  header { background: #3b5bdb; color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; flex: 1; }
+  header input, header select { padding: 6px 8px; border-radius: 6px; border: none; font-size: 13px; }
+  header input { width: 230px; }
+  button { cursor: pointer; border: none; border-radius: 8px; padding: 8px 12px; font-size: 14px; background: #3b5bdb; color: #fff; }
+  button:hover { background: #2f4ac0; }
+  button.ghost { background: #e7ebff; color: #2f4ac0; }
+  button.ghost:hover { background: #d3dbff; }
+  button:disabled { opacity: .5; cursor: default; }
+  #chat { flex: 1; overflow-y: auto; padding: 16px; max-width: 900px; width: 100%; margin: 0 auto; }
+  .msg { margin: 10px 0; padding: 12px 14px; border-radius: 12px; max-width: 92%; line-height: 1.55; overflow-x: auto; }
+  .user { background: #dbe4ff; margin-left: auto; }
+  .bot { background: #fff; box-shadow: 0 1px 3px #0002; }
+  .msg img { max-width: 140px; max-height: 140px; border-radius: 6px; margin: 2px; }
+  .msg pre { background: #f1f3f5; padding: 8px; border-radius: 6px; overflow-x: auto; }
+  .msg table { border-collapse: collapse; } .msg td, .msg th { border: 1px solid #ccc; padding: 4px 8px; }
+  #bottom { background: #fff; border-top: 1px solid #ddd; padding: 10px; }
+  #bottomInner { max-width: 900px; margin: 0 auto; }
+  #quick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  #thumbs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  #thumbs div { position: relative; }
+  #thumbs img { height: 60px; border-radius: 6px; }
+  #thumbs span { position: absolute; top: -6px; right: -6px; background: #e03131; color: #fff; border-radius: 50%; width: 18px; height: 18px; text-align: center; font-size: 12px; cursor: pointer; line-height: 18px; }
+  #row { display: flex; gap: 8px; }
+  textarea { flex: 1; resize: none; padding: 10px; border-radius: 8px; border: 1px solid #bbb; font-size: 15px; font-family: inherit; }
+  .hint { color: #666; text-align: center; margin-top: 40px; }
+  #main { flex: 1; min-height: 0; display: flex; }
+  #pagePane { width: 45%; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
+  #pagePane[hidden] { display: none; }
+  #pageView { flex: 1; overflow: auto; padding: 8px; text-align: center; }
+  #pageView img { width: 100%; cursor: zoom-in; border-radius: 6px; }
+  #pageTabs { display: flex; gap: 6px; padding: 6px; border-top: 1px solid #ddd; overflow-x: auto; }
+  #pageTabs button { padding: 4px 10px; font-size: 13px; }
+  #pageTabs button.on { background: #3b5bdb; color: #fff; }
+  .crop { display: block; max-width: 100%; border: 2px solid #3b5bdb; border-radius: 8px; margin: 6px 0 10px; cursor: zoom-in; background: #fff; }
+  #lb { position: fixed; inset: 0; background: #000d; display: flex; align-items: center; justify-content: center; z-index: 10; cursor: zoom-out; overflow: auto; }
+  #lb[hidden] { display: none; }
+  #lb img { max-width: 96vw; max-height: 96vh; background: #fff; border-radius: 6px; }
+  .mobileOnly { display: none; }
+  #settings { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex-basis: 100%; }
+  #topRow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1 1 100%; }
+  #topRow h1 { flex: 1; }
+  #closePage { margin: 6px; align-self: flex-end; }
+  @media (max-width: 800px) {
+    body { padding-bottom: env(safe-area-inset-bottom); }
+    header { padding: 8px 10px; gap: 6px; }
+    header h1 { font-size: 16px; }
+    .mobileOnly { display: inline-block; }
+    #settings { display: none; }
+    #settings.open { display: flex; }
+    header input, header select, textarea { font-size: 16px; }
+    header input { width: 100%; }
+    header select { flex: 1; min-width: 40%; max-width: none !important; }
+    #voiceNote { max-width: none !important; width: 100%; }
+    #pagePane { display: none !important; }
+    #pagePane.show { display: flex !important; position: fixed; inset: 0; z-index: 5; width: 100%; border: none; }
+    #chat { padding: 10px; }
+    .msg { max-width: 100%; }
+    #quick { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+    #quick button { flex: none; white-space: nowrap; }
+    #bottom { padding: 8px; }
+    #row button { padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div id="topRow">
+    <h1>🎓 Özel Ders Hocam</h1>
+    <button class="ghost" id="pauseSpeak" disabled>⏸ Duraklat</button>
+    <button class="ghost" id="stopSpeak">⏹ Durdur</button>
+    <button class="ghost mobileOnly" id="pageBtn" title="Sayfayı göster">📄</button>
+    <button class="ghost mobileOnly" id="settingsBtn" title="Ayarlar">⚙️</button>
+    <button class="ghost" id="reset">Yeni ders</button>
+  </div>
+  <div id="settings">
+  <input id="key" type="password" placeholder="Gemini API anahtarı">
+  <select id="model" style="max-width:220px">
+    <option value="auto">⚡ Otomatik (önerilen)</option>
+  </select>
+  <button class="ghost" id="refreshModels" title="Güncel modelleri getir">🔄 Modeller</button>
+  <select id="think" title="Düşünme miktarı: azsa cevap hızlı gelir, çoksa zor sorularda daha doğru olur">
+    <option value="low">Hızlı</option>
+    <option value="mid">Dengeli</option>
+    <option value="high">Derin düşün</option>
+  </select>
+  <select id="level">
+    <option value="ortaokul">Ortaokul</option>
+    <option value="lise" selected>Lise</option>
+    <option value="üniversite">Üniversite</option>
+  </select>
+  <label style="font-size:13px"><input type="checkbox" id="autoSpeak" style="width:auto"> 🔊 Otomatik sesli oku</label>
+  <select id="voice" title="Ses">
+    <option value="Kore">🎙 Kore (kadın, net)</option>
+    <option value="Sulafat">🎙 Sulafat (kadın, sıcak)</option>
+    <option value="Aoede">🎙 Aoede (kadın, rahat)</option>
+    <option value="Achird">🎙 Achird (erkek, dostane)</option>
+    <option value="Puck">🎙 Puck (erkek, neşeli)</option>
+    <option value="Charon">🎙 Charon (erkek, bilgilendirici)</option>
+    <option value="browser">Tarayıcı sesi (robotik)</option>
+  </select>
+  <select id="rate" title="Konuşma hızı">
+    <option value="0.9">Yavaş</option>
+    <option value="1" selected>Normal</option>
+    <option value="1.15">Hızlı</option>
+  </select>
+  <span id="voiceNote" style="font-size:12px;max-width:260px"></span>
+  </div>
+</header>
+
+<div id="main"><div id="pagePane" hidden><button class="ghost mobileOnly" id="closePage">✕ Kapat</button><div id="pageView"></div><div id="pageTabs"></div></div><div id="chat"><div class="hint">Çalışmak istediğin sayfaların fotoğrafını ekle (📷) ve "Bu konuyu anlat" yaz. Sayfalarda soru varsa çözerim.<br>Fotoğrafı Ctrl+V ile yapıştırabilirsin.</div></div></div>
+<div id="lb" hidden><img alt=""></div>
+
+<div id="bottom"><div id="bottomInner">
+  <div id="quick">
+    <button class="ghost" data-q="Bu sayfalardaki konuyu bana sohbet eder gibi, baştan sona anlat.">📖 Konuyu anlat</button>
+    <button class="ghost" data-q="Sayfalardaki soruları sırayla, yanımda çözüyormuşsun gibi sesli düşünerek çöz.">✏️ Soruları çöz</button>
+    <button class="ghost" data-q="Anlamadım, bunu çok daha basit anlat. Sanki ilk kez duyuyormuşum gibi.">🧩 Daha basit anlat</button>
+    <button class="ghost" data-q="Aynı konuyu bu sefer tamamen farklı bir yolla anlat (benzetme, günlük hayat örneği veya görsel/şema ile).">🔄 Farklı yolla anlat</button>
+    <button class="ghost" data-q="Bu konuyla ilgili birkaç örnek ver, yanımda çözüyormuşsun gibi anlat.">💡 Örnek ver</button>
+    <button class="ghost" data-q="Beni test et: konuyla ilgili 5 soru sor. Birini sor, cevabımı bekle, sonra değerlendir.">🎯 Beni test et</button>
+    <button class="ghost" data-q="Bu konunun kısa bir özetini, sanki sınav öncesi arkadaşına anlatır gibi söyle ve akılda tutmam için bir ipucu ver.">📝 Özet</button>
+  </div>
+  <div id="thumbs"></div>
+  <div id="row">
+    <button class="ghost" id="addImg" title="Fotoğraf ekle">📷</button>
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <button class="ghost" id="mic" title="Konuşarak sor">🎤</button>
+    <textarea id="text" rows="2" placeholder="Bir şey yaz... (Enter: gönder, Shift+Enter: yeni satır)"></textarea>
+    <button id="send">Gönder</button>
+  </div>
+</div></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const chat = $("chat");
+let history = [];      // Gemini "contents"
+let allImages = [];    // derste gönderilen tüm sayfalar (Foto 1, Foto 2, ...)
+let curPage = 0;
+
+const lb = $("lb");
+lb.onclick = () => lb.hidden = true;
+function zoom(src) { lb.querySelector("img").src = src; lb.hidden = false; }
+
+function showPage(i) {
+  if (!allImages[i]) return;
+  curPage = i;
+  $("pagePane").hidden = false;
+  $("pageView").innerHTML = `<img src="${allImages[i].url}" alt="Foto ${i + 1}">`;
+  $("pageView").firstChild.onclick = () => zoom(allImages[i].url);
+  $("pageTabs").innerHTML = "";
+  allImages.forEach((_, k) => {
+    const b = document.createElement("button");
+    b.className = "ghost" + (k === i ? " on" : ""); b.textContent = "Foto " + (k + 1);
+    b.onclick = () => showPage(k);
+    $("pageTabs").appendChild(b);
+  });
+}
+
+// Modelin işaretlediği soru etiketlerini sayfadan kesilmiş büyük görsele çevirir
+function prepMd(md) {
+  return md
+    .replace(/\[\[SORU\s+foto=(\d+)\s+kutu=([\d.,\s]+)\]\]/g, (_, f, b) => `\n\n<div class="qslot" data-f="${f}" data-b="${b.replace(/\s/g, "")}"></div>\n\n`)
+    .replace(/\[\[SORU[^\]]*\]\]/g, "");
+}
+function renderMsg(el, md) {
+  el.innerHTML = marked.parse(prepMd(md));
+  renderMath(el);
+  el.querySelectorAll(".qslot").forEach(slot => {
+    const idx = parseInt(slot.dataset.f) - 1, src = allImages[idx], v = slot.dataset.b.split(",").map(Number);
+    if (!src || v.length !== 4 || v.some(isNaN)) return slot.remove();
+    const img = new Image();
+    img.onload = () => {
+      const pad = 20;
+      const y1 = Math.max(0, v[0] - pad), x1 = Math.max(0, v[1] - pad), y2 = Math.min(1000, v[2] + pad), x2 = Math.min(1000, v[3] + pad);
+      const sx = x1 / 1000 * img.width, sy = y1 / 1000 * img.height, sw = (x2 - x1) / 1000 * img.width, sh = (y2 - y1) / 1000 * img.height;
+      if (sw < 20 || sh < 20) return slot.remove();
+      const c = document.createElement("canvas"); c.width = sw; c.height = sh;
+      c.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+      const out = new Image(); out.className = "crop"; out.src = c.toDataURL("image/jpeg", 0.92);
+      out.onclick = () => zoom(out.src);
+      slot.replaceWith(out);
+      showPage(idx);
+      chat.scrollTop = chat.scrollHeight;
+    };
+    img.onerror = () => slot.remove();
+    img.src = src.url;
+  });
+}
+let pending = [];      // {mime, data, url}
+
+const SYSTEM = () => `Sen sabırlı, samimi ve çok iyi bir Türk özel ders öğretmenisin. Öğrencinin seviyesi: ${$("level").value}.
+Kurallar:
+- Her zaman Türkçe cevap ver.
+- Sayfada gerçekten yazılı bir soruyu çözmeden hemen önce, o sorunun fotoğraftaki yerini tek başına bir satırda şu etiketle işaretle: [[SORU foto=1 kutu=ymin,xmin,ymax,xmax]]. foto, öğrencinin gönderdiği "Foto N" numarasıdır. kutu koordinatları 0 ile 1000 arasındadır ve soru numarasını, soru metnini, şıkları ve varsa şekli tamamen kapsamalıdır. Bu etiketi sadece sayfadaki sorular için kullan, kendi verdiğin örnekler için kullanma ve etiketi ayrıca açıklama.
+- Öğrenci fotoğraf gönderdiğinde sayfadaki konuyu oku ve onunla yan yana oturmuş bir öğretmen gibi anlat. "Özet, açıklama, önemli noktalar" gibi başlıklı bir şablon kurma; konuyu akan bir hikâye gibi, bir fikirden diğerine geçerek anlat. Sonunda kısa bir soruyla öğrencinin anlayıp anlamadığını yokla.
+- Görselleri, şekilleri, tabloları ve grafikleri asla "görselde şu var, şekilde şunlar görünüyor" diye tarif etme; öğrenci sayfayı zaten görüyor. Görme engelli birine anlatır gibi konuşma. Görselden sadece konuyu anlamaya yarayan bilgiyi al ve doğrudan konuyu anlat. Gerekirse "şekildeki üçgende..." gibi kısa bir gönderme yeterli.
+- Gerçek bir insan gibi, samimi bir ağabey ya da abla edasıyla konuş. Yazı dili değil, konuşma dili kullan: "şimdi bakalım", "hani", "yani", "bak burası önemli", "tamam mı?", "gördün mü?", "işte tam da bu yüzden" gibi doğal bağlayıcılar kullan. Cümle uzunluğunu değiştir; kısa cümleler ile biraz uzun olanlar karışsın. Bazen öğrenciye doğrudan sor ("Sence neden böyle olmuş?") ve cevabını kendin ver.
+- Madde işareti, numaralı liste, kalın başlık ve "Sonuç olarak", "Özetle", "Dolayısıyla", "Bu bağlamda" gibi resmî kalıplar kullanma. Liste gerekiyorsa "önce", "sonra", "en sonunda" diye cümlenin içinde söyle. Sadece gerçekten tablo ya da formül gerekiyorsa biçimlendirme kullan.
+- Kendi ifadelerini tekrar tekrar aynı kalıplarla başlatma. "Harika!", "Tabii ki!", "Elbette!", "Mükemmel soru!" gibi boş övgüler ve yapay heyecan yok. Cesaretlendirme gerekiyorsa gerçek ve somut olsun ("Bu adımı doğru yakaladın, çoğu kişi burada takılıyor").
+- Düşünür gibi konuş: "Bir dakika, şuna bakalım", "Bu kısım biraz kafa karıştırıcı ama..." gibi insani anlar olsun. Öğrenci bir şeyi anlamadıysa bunu normal karşıla ve suçlama.
+- Günlük hayattan, öğrencinin yaşıtlarının bildiği somut örnekler ver (oyun, telefon, yemek, futbol, alışveriş gibi).
+- Cevaplar sesli okunacak. Yani yazdığın şey kulağa konuşma gibi gelmeli. Ekranda güzel duran ama ağızdan çıkınca garip kaçan cümle kurma. Cümleleri çok uzatma. Kısaltma kullanma: "vb.", "vs.", "örn.", "yy." yerine "ve benzeri", "vesaire", "örneğin", "yüzyıl" yaz. Birimleri ve ifadeleri sözcükle yaz (santimetre, kilogram, yüzde, derece Celsius vb. değil, açık haliyle). Matematik dışında sembol kullanma.
+- Sayfada soru varsa her soruyu adım adım çöz ama bunu sanki yanında çözüyormuşsun gibi sesli düşünerek yap: neden o adımı seçtiğini, nerede hata yapılabileceğini söyle. Sonucu net belirt ve mutlaka tekrar kontrol et.
+- Öğrenci "anlamadım", "daha basit" derse önceki anlatımı tekrar etme; daha basit dille, günlük hayattan benzetmelerle ve küçük adımlarla anlat. "Farklı anlat" derse yaklaşımı tamamen değiştir.
+- Fotoğraf okunaksızsa veya eksikse dürüstçe söyle ve sor; tahmin yürütme.
+- Matematik/fizik formüllerini LaTeX ile yaz ($...$ veya $$...$$). Markdown kullan.
+- Öğrenciyi cesaretlendir ama cevabı ezberletme, düşündür.`;
+
+$("key").value = localStorage.getItem("gk") || "";
+$("settingsBtn").onclick = () => $("settings").classList.toggle("open");
+$("pageBtn").onclick = () => { if (!$("pagePane").hidden) $("pagePane").classList.add("show"); else alert("Henüz bir sayfa fotoğrafı eklemedin."); };
+$("closePage").onclick = () => $("pagePane").classList.remove("show");
+if (!$("key").value) $("settings").classList.add("open");
+$("level").value = localStorage.getItem("gl") || "lise";
+$("key").onchange = e => { localStorage.setItem("gk", e.target.value.trim()); loadModels(); };
+$("model").onchange = e => localStorage.setItem("gm", e.target.value);
+$("refreshModels").onclick = () => loadModels(true);
+
+let modelList = [];            // hesapta kullanılabilen modeller
+let ttsList = [];              // hesapta kullanılabilen ses (TTS) modelleri
+const cooldown = {};           // model -> tekrar denenebileceği zaman (ms)
+
+function setModels(names, selected) {
+  modelList = names;
+  $("model").innerHTML = `<option value="auto">⚡ Otomatik (önerilen)</option>` + names.map(n => `<option value="${n}">${n}</option>`).join("");
+  $("model").value = selected === "auto" || names.includes(selected) ? selected : "auto";
+  localStorage.setItem("gm", $("model").value);
+}
+// Hızlı ve genelde daha az yoğun olanlar öne: kararlı flash, flash-lite, pro; önizleme/deneme sürümleri sona
+function rank(n) {
+  let s = /flash-lite/.test(n) ? 1 : /flash/.test(n) ? 0 : /pro/.test(n) ? 2 : 3;
+  if (/preview|exp|thinking/.test(n)) s += 10;
+  return s;
+}
+function candidates() {
+  const sorted = [...modelList].sort((a, b) => rank(a) - rank(b) || b.localeCompare(a, undefined, { numeric: true }));
+  let list = sorted.length ? sorted : ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+  const chosen = $("model").value;
+  if (chosen !== "auto") list = [chosen, ...list.filter(m => m !== chosen)];
+  const now = Date.now();
+  // Yakın zamanda yoğun çıkanlar sona atılır
+  return [...list.filter(m => !(cooldown[m] > now)), ...list.filter(m => cooldown[m] > now)].slice(0, 6);
+}
+// Hesabında yüklü ve içerik üretebilen güncel modelleri API'den çeker
+async function loadModels(verbose) {
+  const key = $("key").value.trim();
+  if (!key) { if (verbose) alert("Önce API anahtarını gir."); return; }
+  $("refreshModels").disabled = true;
+  try {
+    let all = [], token = "";
+    do {
+      const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=100" + (token ? "&pageToken=" + token : ""), { headers: { "x-goog-api-key": key } });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error?.message || r.statusText);
+      all = all.concat(j.models || []); token = j.nextPageToken || "";
+    } while (token);
+    const names = all
+      .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
+      .map(m => m.name.replace("models/", ""))
+      .filter(n => /^gemini/.test(n) && !/embedding|tts|image|live|audio|robotics|computer-use/.test(n))
+      .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    if (!names.length) throw new Error("Uygun model bulunamadı.");
+    ttsList = all
+      .filter(m => (m.supportedGenerationMethods || []).includes("generateContent"))
+      .map(m => m.name.replace("models/", ""))
+      .filter(n => /^gemini/.test(n) && /tts/.test(n))
+      .sort((a, b) => rank(a) - rank(b) || b.localeCompare(a, undefined, { numeric: true }));
+    setModels(names, localStorage.getItem("gm"));
+  } catch (e) {
+    if (verbose) alert("Modeller alınamadı: " + e.message);
+  }
+  $("refreshModels").disabled = false;
+}
+setModels([], localStorage.getItem("gm") || "auto");
+loadModels();
+$("level").onchange = e => localStorage.setItem("gl", e.target.value);
+$("think").value = localStorage.getItem("gt") || "low";
+$("think").onchange = e => localStorage.setItem("gt", e.target.value);
+
+$("reset").onclick = () => { stopSpeech(); history = []; pending = []; allImages = []; $("pagePane").hidden = true; $("pagePane").classList.remove("show"); renderThumbs(); chat.innerHTML = '<div class="hint">Yeni ders başladı. Fotoğraf ekleyerek başla.</div>'; };
+$("addImg").onclick = () => $("file").click();
+$("file").onchange = e => { [...e.target.files].forEach(addFile); e.target.value = ""; };
+document.addEventListener("paste", e => {
+  for (const it of e.clipboardData.items) if (it.type.startsWith("image/")) addFile(it.getAsFile());
+});
+document.querySelectorAll("#quick button").forEach(b => b.onclick = () => send(b.dataset.q));
+$("send").onclick = () => send();
+$("text").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+
+// ---- Sesli okuma ----
+const synth = window.speechSynthesis;
+let voices = [];
+function loadVoices() { voices = synth.getVoices(); }
+loadVoices(); synth.onvoiceschanged = loadVoices;
+$("autoSpeak").checked = localStorage.getItem("gs") === "1";
+$("autoSpeak").onchange = e => localStorage.setItem("gs", e.target.checked ? "1" : "0");
+
+const L = "(?![\\p{L}\\d])";
+const B = "(?<![\\p{L}\\d])";
+const ABBR = [
+  [new RegExp(B + "vb\\.", "giu"), "ve benzeri"], [new RegExp(B + "vs\\.", "giu"), "vesaire"],
+  [new RegExp(B + "örn\\.", "giu"), "örneğin"], [new RegExp(B + "bkz\\.", "giu"), "bakınız"],
+  [new RegExp(B + "yy\\.", "giu"), "yüzyıl"], [new RegExp(B + "M\\.?\\s?Ö\\.", "gu"), "milattan önce"],
+  [new RegExp(B + "M\\.?\\s?S\\.", "gu"), "milattan sonra"], [new RegExp(B + "Dr\\.", "gu"), "doktor"],
+  [new RegExp(B + "Prof\\.", "gu"), "profesör"], [new RegExp(B + "No\\.", "gu"), "numara"],
+  [new RegExp(B + "sf\\.", "giu"), "sayfa"], [/cm²/g, "santimetre kare"], [/m²/g, "metre kare"],
+  [/m³/g, "metre küp"], [/cm³/g, "santimetre küp"],
+  [new RegExp("(\\d)\\s?km/h" + L, "giu"), "$1 kilometre bölü saat"],
+  [new RegExp("(\\d)\\s?m/s" + L, "giu"), "$1 metre bölü saniye"],
+  [new RegExp("(\\d)\\s?km" + L, "giu"), "$1 kilometre"],
+  [new RegExp("(\\d)\\s?cm" + L, "giu"), "$1 santimetre"],
+  [new RegExp("(\\d)\\s?mm" + L, "giu"), "$1 milimetre"],
+  [new RegExp("(\\d)\\s?kg" + L, "giu"), "$1 kilogram"],
+  [new RegExp("(\\d)\\s?mg" + L, "giu"), "$1 miligram"],
+  [new RegExp("(\\d)\\s?ml" + L, "giu"), "$1 mililitre"],
+  [new RegExp("(\\d)\\s?(lt|L)" + L, "gu"), "$1 litre"],
+  [new RegExp("(\\d)\\s?dk" + L, "giu"), "$1 dakika"],
+  [new RegExp("(\\d)\\s?sn" + L, "giu"), "$1 saniye"],
+  [new RegExp("(\\d)\\s?TL" + L, "gu"), "$1 lira"],
+  [new RegExp("(\\d)\\s?m" + L, "gu"), "$1 metre"],
+  [new RegExp("(\\d)\\s?g" + L, "gu"), "$1 gram"],
+  [/°\s?C/g, " derece Celsius"], [/°/g, " derece"],
+  [/%\s?(\d+)/g, "yüzde $1"], [/(\d+)\s?%/g, "yüzde $1"],
+  [/(\d),(\d)/g, "$1 virgül $2"], [/(\d)\.(\d)/g, "$1 virgül $2"],
+  [/\bTDK\b/g, "te de ka"], [/\bTBMM\b/g, "te be me me"], [/\bABD\b/g, "A be de"],
+  [/\bAB\b/g, "Avrupa Birliği"], [/\bBM\b/g, "Birleşmiş Milletler"], [/\bDNA\b/g, "de en a"],
+  [/\bRNA\b/g, "er en a"], [/\bATP\b/g, "a te pe"], [/\bCO2\b/g, "karbondioksit"],
+  [/\bH2O\b/g, "su"], [/\bpH\b/g, "pe ha"], [/\bEBOB\b/g, "ebob"], [/\bEKOK\b/g, "ekok"],
+  [/\bOBEB\b/g, "obeb"], [/\bOKEK\b/g, "okek"], [/\bKDV\b/g, "ka de ve"]
+];
+function expandAbbr(t) { return ABBR.reduce((s, [re, to]) => s.replace(re, to), t); }
+
+function speechText(md) {
+  const t = md
+    .replace(/\[\[SORU[^\]]*\]\]/g, " ")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/\$\$([\s\S]*?)\$\$|\$([^$]+)\$/g, (_, a, b) => " " + latexToSpeech(a || b) + " ")
+    .replace(/[*_#>`|~]/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/^\s*[-•]\s+/gm, "")
+    .replace(/\n+/g, ". ");
+  return expandAbbr(t).replace(/\.(\s*\.)+/g, ".").replace(/\s+/g, " ").trim();
+}
+function latexToSpeech(t) {
+  return t
+    .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g, "($1) bölü ($2)")
+    .replace(/\\sqrt\{([^}]*)\}/g, "karekök $1")
+    .replace(/\^2/g, " kare").replace(/\^3/g, " küp")
+    .replace(/\^\{?([^}\s]+)\}?/g, " üssü $1")
+    .replace(/_\{?([^}\s]+)\}?/g, " indis $1")
+    .replace(/\\cdot|\\times/g, " çarpı ").replace(/\\div/g, " bölü ")
+    .replace(/\\neq/g, " eşit değil ").replace(/\\leq/g, " küçük eşit ").replace(/\\geq/g, " büyük eşit ")
+    .replace(/\\pi/g, " pi ").replace(/\\[a-zA-Z]+/g, " ")
+    .replace(/\+/g, " artı ").replace(/-/g, " eksi ").replace(/=/g, " eşittir ")
+    .replace(/[{}]/g, " ");
+}
+// Cümle cümle çalan kendi kuyruğumuz: duraklatınca kaldığı cümleden devam eder
+let queue = [], qi = 0, qToken = 0, paused = false;
+function updatePauseBtn() {
+  const b = $("pauseSpeak");
+  const active = gActive || (queue.length && qi < queue.length);
+  b.disabled = !active;
+  b.textContent = (gPaused || paused) ? "▶ Devam" : "⏸ Duraklat";
+}
+function playNext() {
+  if (paused || qi >= queue.length) { if (qi >= queue.length) { queue = []; paused = false; } return updatePauseBtn(); }
+  const token = ++qToken;
+  const u = new SpeechSynthesisUtterance(queue[qi]);
+  const v = voices.find(v => v.lang.toLowerCase().startsWith("tr"));
+  u.lang = "tr-TR"; if (v) u.voice = v;
+  u.rate = parseFloat($("rate").value);
+  u.onend = () => { if (token === qToken) { qi++; playNext(); } };
+  u.onerror = () => { if (token === qToken && !paused) { qi++; playNext(); } };
+  synth.speak(u);
+  updatePauseBtn();
+}
+function stopSpeech() {
+  qToken++; queue = []; qi = 0; paused = false; synth.cancel();
+  gToken++; gActive = false; gPaused = false;
+  gSources.forEach(s => { try { s.stop(); } catch {} }); gSources = [];
+  if (actx && actx.state === "suspended") actx.resume();
+  updatePauseBtn();
+}
+
+// Cümleleri birleştirip büyük parçalar yapar (parça arası boşluk azalsın diye)
+function splitForTts(text, max, firstMax = max) {
+  const out = []; let cur = "";
+  for (const s of text.split(/(?<=[.!?])\s+/)) {
+    const lim = out.length ? max : firstMax;
+    if (cur && (cur + " " + s).length > lim) { out.push(cur); cur = s; }
+    else cur = cur ? cur + " " + s : s;
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+// ---- Gemini sesi: doğal, akıcı, parçalar boşluksuz art arda çalınır ----
+let actx = null, gToken = 0, gActive = false, gPaused = false, gSources = [], ttsOffUntil = 0;
+const ttsCooldown = {}, ttsCache = new Map();
+const setNote = t => { $("voiceNote").textContent = t; };
+$("voice").value = localStorage.getItem("gv") || "Kore";
+$("voice").onchange = e => { localStorage.setItem("gv", e.target.value); ttsOffUntil = 0; setNote(""); };
+
+function ttsModels() {
+  const list = ttsList.length ? ttsList : ["gemini-2.5-flash-preview-tts"];
+  const now = Date.now();
+  return [...list.filter(m => !(ttsCooldown[m] > now)), ...list.filter(m => ttsCooldown[m] > now)].slice(0, 3);
+}
+function pcmToBuffer(b64, mime) {
+  const rate = parseInt((/rate=(\d+)/.exec(mime || "") || [])[1]) || 24000;
+  const bin = atob(b64), total = bin.length >> 1;
+  const data = new Float32Array(total);
+  let sum = 0;
+  for (let i = 0; i < total; i++) {
+    let v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8);
+    if (v >= 32768) v -= 65536;
+    data[i] = v / 32768; sum += data[i];
+  }
+  // Sabit kaymayı (DC offset) çıkar: parça sınırlarındaki "tık" sesinin ana sebebi
+  const dc = total ? sum / total : 0;
+  for (let i = 0; i < total; i++) data[i] -= dc;
+  // Baştaki ve sondaki sessizliği/gürültüyü kırp, 20 ms pay bırak
+  const th = 0.01, pad = Math.round(rate * 0.02);
+  let s = 0, e = total - 1;
+  while (s < total && Math.abs(data[s]) < th) s++;
+  while (e > s && Math.abs(data[e]) < th) e--;
+  s = Math.max(0, s - pad); e = Math.min(total - 1, e + pad);
+  const n = Math.max(1, e - s + 1);
+  const buf = actx.createBuffer(1, n, rate), ch = buf.getChannelData(0);
+  ch.set(data.subarray(s, s + n));
+  // Kenarlarda 15 ms yumuşak giriş/çıkış
+  const fade = Math.min(Math.round(rate * 0.015), n >> 1);
+  for (let i = 0; i < fade; i++) { const g = i / fade; ch[i] *= g; ch[n - 1 - i] *= g; }
+  return buf;
+}
+async function ttsChunk(text) {
+  const voice = $("voice").value, ck = voice + "|" + text;
+  if (ttsCache.has(ck)) return ttsCache.get(ck);
+  const key = $("key").value.trim();
+  let lastErr = new Error("Ses modeli bulunamadı");
+  for (const m of ttsModels()) {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 45000);
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
+        method: "POST", signal: ctl.signal,
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text }] }],
+          generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } }
+        })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error?.message || r.statusText);
+      const part = (j.candidates?.[0]?.content?.parts || []).find(p => p.inlineData?.data);
+      if (!part) { lastErr = new Error("Ses üretilemedi"); continue; }
+      const buf = pcmToBuffer(part.inlineData.data, part.inlineData.mimeType);
+      if (ttsCache.size > 40) ttsCache.delete(ttsCache.keys().next().value);
+      ttsCache.set(ck, buf);
+      return buf;
+    } catch (e) {
+      lastErr = e.name === "AbortError" ? new Error("zaman aşımı") : e;
+      ttsCooldown[m] = Date.now() + 120000;
+    } finally { clearTimeout(timer); }
+  }
+  throw lastErr;
+}
+
+async function speakGemini(text) {
+  const token = ++gToken;
+  gActive = true; gPaused = false; updatePauseBtn(); setNote("");
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    await actx.resume();
+    const parts = splitForTts(text, 800, 250), jobs = [];
+    const get = i => {
+      if (!jobs[i]) { const p = ttsChunk(parts[i]); p.catch(() => {}); jobs[i] = p; }
+      return jobs[i];
+    };
+    get(0);
+    let t = 0;
+    for (let i = 0; i < parts.length; i++) {
+      let buf;
+      try { buf = await get(i); }
+      catch (e) {
+        if (token !== gToken) return;
+        ttsOffUntil = Date.now() + 60000;
+        setNote("⚠️ Gemini sesi alınamadı, tarayıcı sesi kullanılıyor (" + e.message + ")");
+        gActive = false; gPaused = false; actx.resume();
+        queue = splitForTts(parts.slice(i).join(" "), 220); qi = 0; playNext();
+        return;
+      }
+      if (token !== gToken) return;
+      if (i + 1 < parts.length) get(i + 1);
+      const src = actx.createBufferSource(), rate = parseFloat($("rate").value);
+      src.buffer = buf; src.playbackRate.value = rate; src.connect(actx.destination);
+      const start = Math.max(t, actx.currentTime + 0.03);
+      src.start(start);
+      t = start + buf.duration / rate + 0.12;
+      gSources.push(src);
+      if (i === parts.length - 1) src.onended = () => { if (token === gToken) { gActive = false; gPaused = false; updatePauseBtn(); } };
+    }
+  } catch (e) {
+    if (token === gToken) { gActive = false; updatePauseBtn(); setNote("⚠️ Ses hatası: " + e.message); }
+  }
+}
+
+function speak(md) {
+  stopSpeech();
+  const text = speechText(md);
+  if (!text) return;
+  if ($("voice").value === "browser" || Date.now() < ttsOffUntil || !$("key").value.trim()) {
+    queue = splitForTts(text, 220); qi = 0; playNext();
+  } else speakGemini(text);
+}
+$("stopSpeak").onclick = stopSpeech;
+$("pauseSpeak").onclick = () => {
+  if (gActive) {
+    gPaused = !gPaused;
+    gPaused ? actx.suspend() : actx.resume();
+    return updatePauseBtn();
+  }
+  if (!queue.length) return;
+  if (paused) { paused = false; playNext(); }
+  else { paused = true; qToken++; synth.cancel(); updatePauseBtn(); }
+};
+updatePauseBtn();
+
+// ---- Mikrofonla soru sorma ----
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+$("mic").onclick = () => {
+  if (!SR) return alert("Bu tarayıcı sesli girişi desteklemiyor. Chrome veya Edge kullan.");
+  if (rec) { rec.stop(); return; }
+  stopSpeech();
+  rec = new SR();
+  rec.lang = "tr-TR"; rec.interimResults = true;
+  const base = $("text").value ? $("text").value + " " : "";
+  let heard = false, failed = false;
+  rec.onresult = e => { heard = true; $("text").value = base + [...e.results].map(r => r[0].transcript).join(""); };
+  rec.onend = () => {
+    rec = null; $("mic").textContent = "🎤";
+    if (heard && !failed) send();
+  };
+  rec.onerror = e => {
+    failed = true;
+    const m = {
+      "not-allowed": "Mikrofon izni verilmedi. Adres çubuğundaki kilit/mikrofon simgesinden izin ver. Dosyayı çift tıklayarak açtıysan http://localhost:8000 adresinden aç.",
+      "service-not-allowed": "Mikrofon izni verilmedi. http://localhost:8000 adresinden açmayı dene.",
+      "no-speech": "Ses duyulmadı. Mikrofonu seçtiğinden ve konuştuğundan emin ol.",
+      "audio-capture": "Mikrofon bulunamadı. Windows ses ayarlarından mikrofonu kontrol et.",
+      "network": "Ses tanıma servisine ulaşılamadı. İnternet bağlantını kontrol et."
+    }[e.error] || "Mikrofon hatası: " + e.error;
+    alert(m);
+  };
+  try { rec.start(); $("mic").textContent = "🔴"; } catch (err) { rec = null; alert("Mikrofon başlatılamadı: " + err.message); }
+};
+
+// Fotoğrafı küçültüp JPEG'e çevirir (daha hızlı ve ucuz)
+function addFile(file) {
+  const img = new Image();
+  img.onload = () => {
+    const max = 1800, s = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement("canvas");
+    c.width = img.width * s; c.height = img.height * s;
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    const url = c.toDataURL("image/jpeg", 0.85);
+    pending.push({ mime: "image/jpeg", data: url.split(",")[1], url });
+    renderThumbs();
+  };
+  img.src = URL.createObjectURL(file);
+}
+function renderThumbs() {
+  $("thumbs").innerHTML = "";
+  pending.forEach((p, i) => {
+    const d = document.createElement("div");
+    d.innerHTML = `<img src="${p.url}"><span>×</span>`;
+    d.querySelector("span").onclick = () => { pending.splice(i, 1); renderThumbs(); };
+    $("thumbs").appendChild(d);
+  });
+}
+
+function addMsg(cls, html, isMd) {
+  const hint = chat.querySelector(".hint"); if (hint) hint.remove();
+  const d = document.createElement("div");
+  d.className = "msg " + cls;
+  if (isMd) { d.innerHTML = marked.parse(html); renderMath(d); } else d.innerHTML = html;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+  return d;
+}
+function renderMath(el) {
+  if (window.renderMathInElement) renderMathInElement(el, { delimiters: [
+    { left: "$$", right: "$$", display: true }, { left: "\\[", right: "\\]", display: true },
+    { left: "$", right: "$", display: false }, { left: "\\(", right: "\\)", display: false }], throwOnError: false });
+}
+const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+async function send(override) {
+  const key = $("key").value.trim();
+  if (!key) return alert("Önce Gemini API anahtarını gir.");
+  const text = (override || $("text").value).trim();
+  if (!text && !pending.length) return;
+  const imgs = pending; pending = []; renderThumbs(); $("text").value = "";
+
+  const parts = [];
+  imgs.forEach(p => {
+    allImages.push(p);
+    parts.push({ text: `Foto ${allImages.length}:` }, { inline_data: { mime_type: p.mime, data: p.data } });
+  });
+  if (imgs.length) showPage(allImages.length - 1);
+  parts.push({ text: text || "Bu sayfaları incele, konuyu anlat ve varsa soruları çöz." });
+  history.push({ role: "user", parts });
+  addMsg("user", imgs.map(p => `<img src="${p.url}">`).join("") + (text ? `<div>${esc(text)}</div>` : ""));
+
+  const wait = addMsg("bot", "⏳ Düşünüyorum...");
+  $("send").disabled = true;
+  try {
+    let out = "", used = "", lastErr, skipped = [];
+    for (const m of candidates()) {
+      wait.innerHTML = (skipped.length ? `<div style="color:#b45309;font-size:13px">⚠️ ${skipped.join(", ")} yoğun/yanıt vermedi, başka modele geçildi.</div>` : "") + `⏳ <b>${m}</b> ile düşünüyorum...`;
+      try { out = await streamModel(m, key, wait); used = m; break; }
+      catch (e) {
+        lastErr = e;
+        if (e.fatal) break;
+        cooldown[m] = Date.now() + 120000;
+        skipped.push(m);
+      }
+    }
+    if (!out) throw lastErr || new Error("Hiçbir modelden cevap alınamadı.");
+    history.push({ role: "model", parts: [{ text: out }] });
+    renderMsg(wait, out);
+    const sb = document.createElement("button");
+    sb.className = "ghost"; sb.textContent = "🔊 Sesli oku"; sb.style.marginTop = "6px";
+    sb.onclick = () => speak(out);
+    wait.appendChild(sb);
+    const info = document.createElement("span");
+    info.style.cssText = "color:#888;font-size:12px;margin-left:8px";
+    info.textContent = used;
+    wait.appendChild(info);
+    if ($("autoSpeak").checked) speak(out);
+  } catch (e) {
+    history.pop();
+    wait.innerHTML = "❌ Hata: " + esc(e.message);
+  }
+  $("send").disabled = false; chat.scrollTop = chat.scrollHeight;
+}
+
+// Cevabı akıtarak alır; takılırsa ya da hata verirse çağıran bir sonraki modeli dener
+async function streamModel(model, key, el, noThink) {
+  const body = { system_instruction: { parts: [{ text: SYSTEM() }] }, contents: history };
+  const budget = { low: 1024, mid: 4096 }[$("think").value];
+  if (budget && !noThink) body.generationConfig = { thinkingConfig: { thinkingBudget: budget } };
+
+  const ctl = new AbortController();
+  let timer;
+  const arm = () => { clearTimeout(timer); timer = setTimeout(() => ctl.abort(), 35000); };
+  arm();
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`, {
+      method: "POST", signal: ctl.signal,
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) {
+      let msg = r.statusText;
+      try { msg = (await r.json()).error?.message || msg; } catch {}
+      if (r.status === 400 && !noThink && /think/i.test(msg)) { clearTimeout(timer); return streamModel(model, key, el, true); }
+      const err = new Error(msg);
+      err.fatal = r.status === 400 || r.status === 401;
+      throw err;
+    }
+    const reader = r.body.getReader(), dec = new TextDecoder();
+    let buf = "", text = "", last = 0, started = false;
+    const show = force => {
+      const now = Date.now();
+      if (!force && now - last < 150) return;
+      last = now;
+      el.innerHTML = marked.parse(text.replace(/\[\[SORU[^\]]*\]\]/g, "").replace(/\[\[[^\]]*$/, "").replace(/\[$/, ""));
+      renderMath(el);
+      chat.scrollTop = chat.scrollHeight;
+    };
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      arm();
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n"); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+        let j; try { j = JSON.parse(line.slice(5)); } catch { continue; }
+        if (j.error) throw new Error(j.error.message || "Akış hatası");
+        const add = (j.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || "").join("");
+        if (add) { text += add; started = true; show(); }
+      }
+    }
+    if (!started || !text.trim()) throw new Error("Boş cevap geldi.");
+    show(true);
+    return text;
+  } catch (e) {
+    if (e.name === "AbortError") throw new Error("Zaman aşımı (model geç yanıt verdi)");
+    throw e;
+  } finally { clearTimeout(timer); }
+}
+</script>
+</body>
+</html>
